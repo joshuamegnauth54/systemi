@@ -1,0 +1,23 @@
+[package]
+name = "timedate_bsd"
+authors = ["Josh Megnauth <jo.sh@tutanota.com>"]
+description = "A timedate1 implementation that targets the BSDs."
+version = "0.1.0"
+edition = "2024"
+license = "BSD-2-Clause AND GPL-3.0-only"
+
+[features]
+default = ["freebsd-15"]
+freebsd-15 = []
+
+[dependencies]
+# jiff = "0.2"
+libc = "0.2"
+rustix = { version = "1", features = ["event", "fs", "stdio", "time"] }
+tracing = "0.1"
+zbus_polkit = { version = "6", default-features = false, features = ["tokio"] }
+
+[dependencies.zbus]
+version = "6"
+default-features = false
+features = ["object-manager", "proxy", "service", "tokio", "tracing"]
