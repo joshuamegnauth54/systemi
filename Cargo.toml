@@ -21,3 +21,9 @@ zbus_polkit = { version = "6", default-features = false, features = ["tokio"] }
 version = "6"
 default-features = false
 features = ["object-manager", "proxy", "service", "tokio", "tracing"]
+
+[profile.release]
+codegen-units = 1
+lto = true
+panic = "abort"
+strip = true

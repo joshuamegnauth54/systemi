@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-2-Clause
 
+pub mod error;
 pub mod platform;
 
 use rustix::{
@@ -7,15 +8,28 @@ use rustix::{
     net::{AddressFamily, SocketFlags, SocketType, socketpair},
 };
 
-use crate::platform::{common::ServiceFork, fork_it, main_privileged, main_unprivleged};
+use crate::{
+    error::{Action, Error},
+    platform::{
+        common::{ServiceFork, close_unneeded_fds},
+        fork_it, main_privileged, main_unprivleged,
+    },
+};
 
-fn main() -> Result<(), Errno> {
+fn main() -> Result<(), Error> {
+    close_unneeded_fds()?;
+
     let (parent, child) = socketpair(
         AddressFamily::UNIX,
         SocketType::STREAM,
         SocketFlags::CLOEXEC,
         None,
-    )?;
+    )
+    .map_err(|err| Error {
+        act: Action::Socket,
+        err,
+        msg: "socket pair for privileged/unprivileged communication",
+    })?;
 
     // SAFETY: No standard libraries locks as used, as far as I can tell. The only resource created
     // is designed to be passed through the fork.

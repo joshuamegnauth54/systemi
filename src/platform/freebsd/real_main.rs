@@ -2,23 +2,31 @@
 
 use core::{hint::cold_path, mem::MaybeUninit};
 
-use libc::{__error, PD_CLOEXEC, pdfork};
+use libc::{PD_CLOEXEC, pdfork};
 use rustix::{
     fd::{FromRawFd, OwnedFd},
     io::Errno,
     process::RawPid,
 };
 
-use crate::platform::common::ServiceFork;
+use crate::{
+    error::{Action, Error},
+    platform::common::{ServiceFork, gib_errno},
+};
 
 #[allow(unsafe_op_in_unsafe_fn)]
-pub unsafe fn fork_it(parent: OwnedFd, child: OwnedFd) -> Result<ServiceFork, Errno> {
+pub unsafe fn fork_it(parent: OwnedFd, child: OwnedFd) -> Result<ServiceFork, Error> {
     let mut pidfd = MaybeUninit::<RawPid>::uninit();
 
     match pdfork(pidfd.as_mut_ptr(), PD_CLOEXEC) {
         -1 => {
             cold_path();
-            Err(Errno::from_raw_os_error(__error()))
+            let err = Errno::from_raw_os_error(gib_errno());
+            Err(Error {
+                act: Action::Fork,
+                err,
+                msg: "Forking into child",
+            })
         }
         0 => Ok(ServiceFork::Child { helper: child }),
         pid => {

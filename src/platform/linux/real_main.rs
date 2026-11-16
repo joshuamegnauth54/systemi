@@ -12,10 +12,13 @@ use rustix::{
     process::{RawPid, Signal, set_parent_process_death_signal},
 };
 
-use crate::platform::common::ServiceFork;
+use crate::{
+    error::{Action, Error},
+    platform::common::{ServiceFork, gib_errno},
+};
 
 #[expect(unsafe_op_in_unsafe_fn)]
-pub unsafe fn fork_it(parent: OwnedFd, child: OwnedFd) -> Result<ServiceFork, Errno> {
+pub unsafe fn fork_it(parent: OwnedFd, child: OwnedFd) -> Result<ServiceFork, Error> {
     let mut pidfd = MaybeUninit::<RawPid>::uninit();
     let mut args = clone_args {
         flags: CLONE_PIDFD as u64,
@@ -34,11 +37,20 @@ pub unsafe fn fork_it(parent: OwnedFd, child: OwnedFd) -> Result<ServiceFork, Er
     match syscall(SYS_clone3, &raw mut args, size_of::<clone_args>()) {
         -1 => {
             cold_path();
-            Err(Errno::from_raw_os_error(*libc::__errno_location()))
+            let err = Errno::from_raw_os_error(gib_errno());
+            Err(Error {
+                act: Action::Fork,
+                err,
+                msg: "forking into child with CLONE3",
+            })
         }
         0 => Ok(ServiceFork::Child { helper: child }),
         _pid => {
-            set_parent_process_death_signal(Some(Signal::KILL))?;
+            set_parent_process_death_signal(Some(Signal::KILL)).map_err(|err| Error {
+                err,
+                act: Action::Procctl,
+                msg: "Setting parent death signal",
+            })?;
 
             // Like FreeBSD's path, I want a PID file descriptor.
             let pidfd = pidfd.assume_init();
