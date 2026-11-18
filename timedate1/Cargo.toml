@@ -1,0 +1,23 @@
+[package]
+name = "systemi-timedate1"
+description = "Portable timedate1 for systemi."
+authors.workspace = true
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "systemi-timedate1"
+path = "src/main.rs"
+
+[dependencies]
+systemi-platform.workspace = true
+
+rustix.workspace = true
+tracing.workspace = true
+zbus.workspace = true
+zbus_polkit.workspace = true
+zruntime.workspace = true

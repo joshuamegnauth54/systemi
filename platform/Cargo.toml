@@ -1,0 +1,15 @@
+[package]
+name = "systemi-platform"
+description = "Platform helpers for systemi."
+authors.workspace = true
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[features]
+default = ["freebsd-15"]
+freebsd-15 = []
+
+[dependencies]
+libc.workspace = true
+rustix.workspace = true

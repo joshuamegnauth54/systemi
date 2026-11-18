@@ -1,25 +1,18 @@
-[package]
-name = "timedate_bsd"
+[workspace]
+members = ["platform", "timedate1"]
+resolver = "3"
+
+[workspace.package]
 authors = ["Josh Megnauth <jo.sh@tutanota.com>"]
-description = "A timedate1 implementation that targets the BSDs."
 version = "0.1.0"
 edition = "2024"
 license = "BSD-2-Clause AND GPL-3.0-only"
 
-[features]
-default = ["freebsd-15"]
-freebsd-15 = []
+[workspace.dependencies]
+systemi-platform = { path = "platform" }
 
-[dependencies]
-# jiff = "0.2"
 libc = "0.2"
-rustix = { version = "1", features = [
-  "event",
-  "fs",
-  "stdio",
-  "thread",
-  "time",
-] }
+rustix = { version = "1", features = ["event", "fs", "stdio", "thread", "time"] }
 tracing = "0.1"
 zbus = "6"
 zbus_polkit = { version = "6", default-features = false }

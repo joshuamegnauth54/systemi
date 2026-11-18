@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: BSD-2-Clause
 
-pub mod error;
-pub mod platform;
-
 use rustix::net::{AddressFamily, SocketFlags, SocketType, socketpair};
 
-use crate::{
+use systemi_platform::{
     error::{Action, Error},
     platform::{ServiceFork, close_unneeded_fds, fork_it, main_privileged, main_unprivileged},
 };

@@ -322,6 +322,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "systemi-platform"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "rustix",
+]
+
+[[package]]
+name = "systemi-timedate1"
+version = "0.1.0"
+dependencies = [
+ "rustix",
+ "systemi-platform",
+ "tracing",
+ "zbus",
+ "zbus_polkit",
+ "zruntime",
+]
+
+[[package]]
 name = "tempfile"
 version = "3.27.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -332,18 +352,6 @@ dependencies = [
  "once_cell",
  "rustix",
  "windows-sys",
-]
-
-[[package]]
-name = "timedate_bsd"
-version = "0.1.0"
-dependencies = [
- "libc",
- "rustix",
- "tracing",
- "zbus",
- "zbus_polkit",
- "zruntime",
 ]
 
 [[package]]
