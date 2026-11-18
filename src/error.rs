@@ -14,6 +14,18 @@ pub struct Error {
     pub msg: &'static str,
 }
 
+impl Error {
+    #[cold]
+    #[inline(never)]
+    pub const fn procctl(err: Errno, msg: &'static str) -> Self {
+        Self {
+            act: Action::Procctl,
+            err,
+            msg,
+        }
+    }
+}
+
 impl error::Error for Error {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         Some(&self.err)
@@ -28,24 +40,43 @@ impl Display for Error {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Action {
-    Open,
+    #[cfg(target_os = "linux")]
+    CapGet,
+    #[cfg(target_os = "linux")]
+    CapSet,
     Close,
     Dup,
     Fcntl,
     Fork,
+    Open,
     Procctl,
+    Sanity,
+    SetGid,
+    SetGroups,
+    SetUid,
     Socket,
 }
 
 impl Display for Action {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match *self {
-            Action::Open => write!(f, "open"),
+            #[cfg(target_os = "linux")]
+            Action::CapGet => write!(f, "capget"),
+            #[cfg(target_os = "linux")]
+            Action::CapSet => write!(f, "capset"),
             Action::Close => write!(f, "close"),
             Action::Dup => write!(f, "dup"),
             Action::Fcntl => write!(f, "fcntl"),
             Action::Fork => write!(f, "fork"),
+            Action::Open => write!(f, "open"),
+            #[cfg(not(target_os = "linux"))]
             Action::Procctl => write!(f, "procctl"),
+            #[cfg(target_os = "linux")]
+            Action::Procctl => write!(f, "prctl"),
+            Action::Sanity => write!(f, "sanity"),
+            Action::SetGid => write!(f, "setgid"),
+            Action::SetGroups => write!(f, "setgroups"),
+            Action::SetUid => write!(f, "setuid"),
             Action::Socket => write!(f, "socket"),
         }
     }

@@ -5,8 +5,7 @@ use core::{hint::cold_path, mem::MaybeUninit};
 use libc::{PD_CLOEXEC, pdfork};
 use rustix::{
     fd::{FromRawFd, OwnedFd},
-    io::Errno,
-    process::RawPid,
+    process::{RawPid, Signal, set_parent_process_death_signal},
 };
 
 use crate::{
@@ -21,14 +20,18 @@ pub unsafe fn fork_it(parent: OwnedFd, child: OwnedFd) -> Result<ServiceFork, Er
     match pdfork(pidfd.as_mut_ptr(), PD_CLOEXEC) {
         -1 => {
             cold_path();
-            let err = Errno::from_raw_os_error(gib_errno());
             Err(Error {
                 act: Action::Fork,
-                err,
+                err: gib_errno(),
                 msg: "Forking into child",
             })
         }
-        0 => Ok(ServiceFork::Child { helper: child }),
+        0 => {
+            // Child is killed on drop, so this is just some extra assurance for panic = "abort".
+            set_parent_process_death_signal(Some(Signal::KILL))
+                .map_err(|err| Error::procctl(err, "Setting parent death signal"))?;
+            Ok(ServiceFork::Child { helper: child })
+        }
         pid => {
             let pidfd = pidfd.assume_init();
             let child = OwnedFd::from_raw_fd(pidfd);
@@ -40,10 +43,10 @@ pub unsafe fn fork_it(parent: OwnedFd, child: OwnedFd) -> Result<ServiceFork, Er
     }
 }
 
-pub fn main_privileged(helper: OwnedFd) -> Result<(), Errno> {
+pub fn main_privileged(helper: OwnedFd) -> Result<(), Error> {
     todo!()
 }
 
-pub fn main_unprivleged(helper: OwnedFd) -> Result<(), Errno> {
+pub fn main_unprivileged(helper: OwnedFd) -> Result<(), Error> {
     todo!()
 }

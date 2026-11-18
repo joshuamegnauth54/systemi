@@ -8,7 +8,6 @@ use core::{
 use libc::{CLONE_PIDFD, SYS_clone3, clone_args, syscall};
 use rustix::{
     fd::{FromRawFd, OwnedFd},
-    io::Errno,
     process::{RawPid, Signal, set_parent_process_death_signal},
 };
 
@@ -37,21 +36,19 @@ pub unsafe fn fork_it(parent: OwnedFd, child: OwnedFd) -> Result<ServiceFork, Er
     match syscall(SYS_clone3, &raw mut args, size_of::<clone_args>()) {
         -1 => {
             cold_path();
-            let err = Errno::from_raw_os_error(gib_errno());
             Err(Error {
                 act: Action::Fork,
-                err,
+                err: gib_errno(),
                 msg: "forking into child with CLONE3",
             })
         }
-        0 => Ok(ServiceFork::Child { helper: child }),
-        _pid => {
-            set_parent_process_death_signal(Some(Signal::KILL)).map_err(|err| Error {
-                err,
-                act: Action::Procctl,
-                msg: "Setting parent death signal",
-            })?;
+        0 => {
+            set_parent_process_death_signal(Some(Signal::KILL))
+                .map_err(|err| Error::procctl(err, "Setting parent death signal"))?;
 
+            Ok(ServiceFork::Child { helper: child })
+        }
+        _pid => {
             // Like FreeBSD's path, I want a PID file descriptor.
             let pidfd = pidfd.assume_init();
             // Child intentionally shadowed here.
@@ -64,10 +61,10 @@ pub unsafe fn fork_it(parent: OwnedFd, child: OwnedFd) -> Result<ServiceFork, Er
     }
 }
 
-pub fn main_privileged(helper: OwnedFd) -> Result<(), Errno> {
+pub fn main_privileged(helper: OwnedFd) -> Result<(), Error> {
     todo!()
 }
 
-pub fn main_unprivleged(helper: OwnedFd) -> Result<(), Errno> {
+pub fn main_unprivileged(helper: OwnedFd) -> Result<(), Error> {
     todo!()
 }

@@ -13,14 +13,17 @@ freebsd-15 = []
 [dependencies]
 # jiff = "0.2"
 libc = "0.2"
-rustix = { version = "1", features = ["event", "fs", "stdio", "time"] }
+rustix = { version = "1", features = [
+  "event",
+  "fs",
+  "stdio",
+  "thread",
+  "time",
+] }
 tracing = "0.1"
-zbus_polkit = { version = "6", default-features = false, features = ["tokio"] }
-
-[dependencies.zbus]
-version = "6"
-default-features = false
-features = ["object-manager", "proxy", "service", "tokio", "tracing"]
+zbus = "6"
+zbus_polkit = { version = "6", default-features = false }
+zruntime = "0.2"
 
 [profile.release]
 codegen-units = 1

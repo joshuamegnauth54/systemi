@@ -3,17 +3,11 @@
 pub mod error;
 pub mod platform;
 
-use rustix::{
-    io::Errno,
-    net::{AddressFamily, SocketFlags, SocketType, socketpair},
-};
+use rustix::net::{AddressFamily, SocketFlags, SocketType, socketpair};
 
 use crate::{
     error::{Action, Error},
-    platform::{
-        common::{ServiceFork, close_unneeded_fds},
-        fork_it, main_privileged, main_unprivleged,
-    },
+    platform::{ServiceFork, close_unneeded_fds, fork_it, main_privileged, main_unprivileged},
 };
 
 fn main() -> Result<(), Error> {

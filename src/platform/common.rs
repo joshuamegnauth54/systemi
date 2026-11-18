@@ -1,17 +1,16 @@
 // SPDX-License-Identifier: BSD-2-Clause
 
-use core::ffi::c_int;
+use core::{hint::cold_path, ptr};
 
-use rustix::fd::OwnedFd;
+use libc::{gid_t, setgid, setgroups, setuid, uid_t};
+use rustix::{fd::OwnedFd, io::Errno};
+
+use crate::error::{Action, Error};
 
 #[cfg(any(target_os = "freebsd", target_vendor = "apple"))]
 use libc::__error;
 
-#[cfg(any(
-    target_os = "helenos",
-    target_os = "netbsd",
-    target_os = "openbsd",
-))]
+#[cfg(any(target_os = "helenos", target_os = "netbsd", target_os = "openbsd",))]
 use libc::__errno as __error;
 
 #[cfg(any(
@@ -26,9 +25,6 @@ use libc::__errno_location as __error;
 #[cfg(any(target_os = "illumos", target_os = "solaris"))]
 use libc::___errno as __error;
 
-#[cfg(any(target_os = "freebsd", target_os = "linux"))]
-pub use super::freebsd_linux::*;
-
 /// Result of forking into unprivileged D-Bus service.
 ///
 /// The parent owns one half of a socket to communicate with the child while the child owns the
@@ -39,8 +35,48 @@ pub enum ServiceFork {
     Child { helper: OwnedFd },
 }
 
-#[inline]
-pub fn gib_errno() -> c_int {
+#[cold]
+#[inline(never)]
+pub fn gib_errno() -> Errno {
     // SAFETY: This is not unsafe.
-    unsafe { *__error() }
+    Errno::from_raw_os_error(unsafe { *__error() })
+}
+
+pub fn unset_groups() -> Result<(), Error> {
+    if unsafe { setgroups(0, ptr::null()) } == -1 {
+        cold_path();
+        Err(Error {
+            act: Action::SetGroups,
+            err: gib_errno(),
+            msg: "Dropping supplementary groups",
+        })
+    } else {
+        Ok(())
+    }
+}
+
+pub fn set_gid(gid: gid_t) -> Result<(), Error> {
+    if unsafe { setgid(gid) } == -1 {
+        cold_path();
+        Err(Error {
+            act: Action::SetGid,
+            err: gib_errno(),
+            msg: "Dropping real, effective, and set group ID",
+        })
+    } else {
+        Ok(())
+    }
+}
+
+pub fn set_uid(uid: uid_t) -> Result<(), Error> {
+    if unsafe { setuid(uid) } == -1 {
+        cold_path();
+        Err(Error {
+            act: Action::SetUid,
+            err: gib_errno(),
+            msg: "Dropping real, effective, and set user ID",
+        })
+    } else {
+        Ok(())
+    }
 }

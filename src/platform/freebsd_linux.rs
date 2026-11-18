@@ -4,9 +4,9 @@ use core::mem::DropGuard;
 
 use libc::close_range;
 use rustix::{
-    fd::{AsRawFd, BorrowedFd, IntoRawFd, OwnedFd},
+    fd::{AsRawFd, BorrowedFd, IntoRawFd},
     fs::{Mode, OFlags, open},
-    io::{DupFlags, Errno, dup3, fcntl_getfd},
+    io::{DupFlags, dup3, fcntl_getfd},
     stdio::{raw_stderr, raw_stdin, take_stdin},
 };
 
@@ -35,33 +35,31 @@ pub fn close_unneeded_fds() -> Result<(), Error> {
     if null.as_raw_fd() == raw_stdin() {
         // Ensure it's not dropped or else we'd just close stdin again.
         _ = null.into_raw_fd();
-        return Ok(());
+    } else {
+        // Dup stdin onto /dev/null and ensure it's not closed on drop.
+        // (Exciting that I found a use for DropGuard a day after release!)
+        fcntl_getfd(unsafe { BorrowedFd::borrow_raw(raw_stdin()) }).map_err(|err| Error {
+            act: Action::Fcntl,
+            err,
+            msg: "F_GETFD on stdin to check if it's open",
+        })?;
+        let mut stdin = unsafe {
+            DropGuard::new(take_stdin(), |stdin| {
+                _ = stdin.into_raw_fd();
+            })
+        };
+        dup3(&null, &mut stdin, DupFlags::CLOEXEC).map_err(|err| Error {
+            act: Action::Dup,
+            err,
+            msg: "dup stdin -> /dev/null",
+        })?;
     }
-
-    // Dup stdin onto /dev/null and ensure it's not closed on drop.
-    // (Exciting that I found a use for DropGuard a day after release!)
-    fcntl_getfd(unsafe { BorrowedFd::borrow_raw(raw_stdin()) }).map_err(|err| Error {
-        act: Action::Fcntl,
-        err,
-        msg: "F_GETFD on stdin to check if it's open",
-    })?;
-    let mut stdin = unsafe {
-        DropGuard::new(take_stdin(), |stdin| {
-            _ = stdin.into_raw_fd();
-        })
-    };
-    dup3(&null, &mut stdin, DupFlags::CLOEXEC).map_err(|err| Error {
-        act: Action::Dup,
-        err,
-        msg: "dup stdin -> /dev/null",
-    })?;
 
     // TODO: likely_unlikely
     if unsafe { close_range(raw_stderr() as u32 + 1, u32::MAX, 0) } == -1 {
-        let err = Errno::from_raw_os_error(gib_errno());
         Err(Error {
             act: Action::Close,
-            err,
+            err: gib_errno(),
             msg: "closing all file descriptors above stderr",
         })
     } else {
