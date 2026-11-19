@@ -11,8 +11,8 @@ use rustix::{
 };
 
 use crate::{
+    common::{set_gid, set_uid, unset_groups},
     error::{Action, Error},
-    platform::common::{set_gid, set_uid, unset_groups},
 };
 
 const DROP_AMBIENT: &str = "Dropping ambient capabilities (PR_CAP_AMBIENT_CLEAR_ALL)";

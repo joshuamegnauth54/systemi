@@ -40,6 +40,8 @@ impl Display for Error {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Action {
+    #[cfg(target_os = "freebsd")]
+    CapEnter,
     #[cfg(target_os = "linux")]
     CapGet,
     #[cfg(target_os = "linux")]
@@ -60,6 +62,8 @@ pub enum Action {
 impl Display for Action {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match *self {
+            #[cfg(target_os = "freebsd")]
+            Action::CapEnter => write!(f, "cap_enter"),
             #[cfg(target_os = "linux")]
             Action::CapGet => write!(f, "capget"),
             #[cfg(target_os = "linux")]
