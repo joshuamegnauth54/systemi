@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-2-Clause
 
-use core::{hint::cold_path, ptr};
+use core::{hint::cold_path, num::NonZeroU32, ptr};
 
 use libc::{gid_t, setgid, setgroups, setuid, uid_t};
 use rustix::{fd::OwnedFd, io::Errno};
@@ -55,28 +55,28 @@ pub fn unset_groups() -> Result<(), Error> {
     }
 }
 
-pub fn set_gid(gid: gid_t) -> Result<(), Error> {
-    if unsafe { setgid(gid) } == -1 {
+pub fn set_gid(gid: NonZeroU32) -> Result<(), Error> {
+    if unsafe { setgid(gid.get()) } == 0 {
+        Ok(())
+    } else {
         cold_path();
         Err(Error {
             act: Action::SetGid,
             err: gib_errno(),
             msg: "Dropping real, effective, and set group ID",
         })
-    } else {
-        Ok(())
     }
 }
 
-pub fn set_uid(uid: uid_t) -> Result<(), Error> {
-    if unsafe { setuid(uid) } == -1 {
+pub fn set_uid(uid: NonZeroU32) -> Result<(), Error> {
+    if unsafe { setuid(uid.get()) } == 0 {
+        Ok(())
+    } else {
         cold_path();
         Err(Error {
             act: Action::SetUid,
             err: gib_errno(),
             msg: "Dropping real, effective, and set user ID",
         })
-    } else {
-        Ok(())
     }
 }

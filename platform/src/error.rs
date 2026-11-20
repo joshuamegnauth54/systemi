@@ -24,6 +24,16 @@ impl Error {
             msg,
         }
     }
+
+    #[cold]
+    #[inline(never)]
+    pub const fn uid_gid_range() -> Self {
+        Error {
+            act: Action::Sanity,
+            err: Errno::RANGE,
+            msg: "UID/GID out of range for uid_t/gid_t",
+        }
+    }
 }
 
 impl error::Error for Error {

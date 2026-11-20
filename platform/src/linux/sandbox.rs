@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-2-Clause
 
-use libc::{gid_t, uid_t};
+use core::num::NonZeroU32;
+
 use rustix::{
     io::Errno,
     thread::{
@@ -20,15 +21,7 @@ const CAPBSET_DROP: &str = "Dropping bounding set capabilities (PR_CAPBSET_DROP)
 const NO_NEW_PRIVS: &str = "Enabling no new privileges (PR_SET_NO_NEW_PRIVS)";
 const CAPABILITIES: &str = "Checking permitted capabilities";
 
-pub fn sandbox_unprivileged(uid: uid_t, gid: gid_t) -> Result<(), Error> {
-    if uid == 0 || gid == 0 {
-        return Err(Error {
-            act: Action::Sanity,
-            err: Errno::INVAL,
-            msg: "Unprivileged daemon requested to be run as root",
-        });
-    }
-
+pub fn sandbox_unprivileged(uid: NonZeroU32, gid: NonZeroU32) -> Result<(), Error> {
     clear_ambient_capability_set().map_err(|err| Error::procctl(err, DROP_AMBIENT))?;
     drop_bounding(CapabilitySet::empty())?;
 
@@ -43,7 +36,11 @@ pub fn sandbox_unprivileged(uid: uid_t, gid: gid_t) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn sandbox_privileged(uid: uid_t, gid: gid_t, cap: CapabilitySet) -> Result<(), Error> {
+pub fn sandbox_privileged(
+    uid: Option<NonZeroU32>,
+    gid: Option<NonZeroU32>,
+    cap: CapabilitySet,
+) -> Result<(), Error> {
     // XXX: If root is disallowed, check it in the function that calls this function in the daemon.
     // This is subject to change if all of the Linux implementations can work without root.
     if !capabilities(None)
@@ -65,7 +62,9 @@ pub fn sandbox_privileged(uid: uid_t, gid: gid_t, cap: CapabilitySet) -> Result<
     clear_ambient_capability_set().map_err(|err| Error::procctl(err, DROP_AMBIENT))?;
     drop_bounding(cap)?;
     unset_groups()?;
-    set_gid(gid)?;
+    if let Some(gid) = gid {
+        set_gid(gid)?;
+    }
 
     // Permissions need to be explicitly kept across setuid.
     set_keep_capabilities(true).map_err(|err| {
@@ -74,7 +73,9 @@ pub fn sandbox_privileged(uid: uid_t, gid: gid_t, cap: CapabilitySet) -> Result<
             "Preserving permissions across setuid (PR_SET_KEEPCAPS)",
         )
     })?;
-    set_uid(uid)?;
+    if let Some(uid) = uid {
+        set_uid(uid)?;
+    }
 
     let expected = CapabilitySets {
         effective: cap,

@@ -11,8 +11,8 @@ use rustix::{
 };
 
 use crate::{
+    common::gib_errno,
     error::{Action, Error},
-    platform::common::gib_errno,
 };
 
 /// Close stdin and all file descriptors other than stdout and stderr.

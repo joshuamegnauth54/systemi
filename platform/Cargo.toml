@@ -13,3 +13,6 @@ freebsd-15 = []
 [dependencies]
 libc.workspace = true
 rustix.workspace = true
+
+[lints]
+workspace = true

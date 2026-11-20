@@ -21,3 +21,6 @@ tracing.workspace = true
 zbus.workspace = true
 zbus_polkit.workspace = true
 zruntime.workspace = true
+
+[lints]
+workspace = true

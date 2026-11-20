@@ -12,10 +12,17 @@ use rustix::{
 };
 
 use crate::{
+    common::{ServiceFork, gib_errno},
     error::{Action, Error},
-    platform::common::{ServiceFork, gib_errno},
 };
 
+/// Fork, ensuring child dies with the parent.
+///
+/// # Safety
+/// * Global state is left untouched before fork to prevent deadlocks or invalid state.
+/// * Inherited file descriptors should be in a neutral state to prevent weird interactions.
+///   Currently, the daemons are designed to close all file descriptors other than the helper and
+///   standard streams.
 #[expect(unsafe_op_in_unsafe_fn)]
 pub unsafe fn fork_it(parent: OwnedFd, child: OwnedFd) -> Result<ServiceFork, Error> {
     let mut pidfd = MaybeUninit::<RawPid>::uninit();
