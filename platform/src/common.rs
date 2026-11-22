@@ -1,9 +1,14 @@
 // SPDX-License-Identifier: BSD-2-Clause
 
+pub mod buffer;
+
 use core::{hint::cold_path, num::NonZeroU32, ptr};
 
-use libc::{gid_t, setgid, setgroups, setuid, uid_t};
-use rustix::{fd::OwnedFd, io::Errno};
+use libc::{setgid, setgroups, setuid};
+use rustix::{
+    fd::{BorrowedFd, OwnedFd},
+    io::{Errno, read},
+};
 
 use crate::error::{Action, Error};
 
@@ -79,4 +84,34 @@ pub fn set_uid(uid: NonZeroU32) -> Result<(), Error> {
             msg: "Dropping real, effective, and set user ID",
         })
     }
+}
+
+/// Read until EOF or buf is full.
+pub fn read_buf<'b>(
+    fd: BorrowedFd<'_>,
+    buf: &'b mut [u8],
+    msg: &'static str,
+) -> Result<&'b [u8], Error> {
+    let mut nread = 0;
+
+    loop {
+        match read(fd, &mut buf[nread..]) {
+            Ok(n) => {
+                nread += n;
+                if n == 0 || nread == buf.len() {
+                    break;
+                }
+            }
+            Err(Errno::INTR) => (),
+            Err(err) => {
+                return Err(Error {
+                    act: Action::Read,
+                    err,
+                    msg,
+                });
+            }
+        }
+    }
+
+    Ok(&buf[..nread])
 }

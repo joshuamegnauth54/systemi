@@ -62,6 +62,7 @@ pub enum Action {
     Fork,
     Open,
     Procctl,
+    Read,
     Sanity,
     SetGid,
     SetGroups,
@@ -82,11 +83,12 @@ impl Display for Action {
             Action::Dup => write!(f, "dup"),
             Action::Fcntl => write!(f, "fcntl"),
             Action::Fork => write!(f, "fork"),
-            Action::Open => write!(f, "open"),
+            Action::Open => write!(f, "open[at]"),
             #[cfg(not(target_os = "linux"))]
             Action::Procctl => write!(f, "procctl"),
             #[cfg(target_os = "linux")]
             Action::Procctl => write!(f, "prctl"),
+            Action::Read => write!(f, "read"),
             Action::Sanity => write!(f, "sanity"),
             Action::SetGid => write!(f, "setgid"),
             Action::SetGroups => write!(f, "setgroups"),

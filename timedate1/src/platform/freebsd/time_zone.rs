@@ -13,15 +13,13 @@
 use core::{mem::MaybeUninit, ptr, str};
 use std::thread;
 
-use async_fn_stream::StreamEmitter;
-use jiff::tz::TimeZone;
 use rustix::{
     event::kqueue::{Event, EventFilter, EventFlags, VnodeEvents, kevent, kqueue},
     fd::{AsFd, AsRawFd, BorrowedFd, OwnedFd},
     fs::{self, Mode, OFlags, SeekFrom},
     io::{self, Errno},
 };
-use tokio::sync::watch::{Sender, channel};
+use zruntime::mpmc::{bounded, Sender, Receiver};
 use tracing::warn;
 
 pub async fn tz_stream(emitter: &StreamEmitter<TimeZone>) -> anyhow::Result<()> {
