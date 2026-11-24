@@ -12,7 +12,15 @@ license = "BSD-2-Clause AND GPL-3.0-only"
 systemi-platform = { path = "platform" }
 
 libc = "0.2"
-rustix = { version = "1", features = ["event", "fs", "stdio", "thread", "time"] }
+rustix = { version = "1", features = [
+  "event",
+  "fs",
+  "mm",
+  "pipe",
+  "stdio",
+  "thread",
+  "time",
+] }
 tracing = "0.1"
 zbus = "6"
 zbus_polkit = { version = "6", default-features = false }

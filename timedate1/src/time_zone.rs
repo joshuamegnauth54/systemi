@@ -56,5 +56,13 @@ impl TimeZone<'_> {
                 msg: "zone1970.tab too large to read into stack buffer",
             });
         }
+
+        // zone1970 is a TSV where the third field is time zone. Let's parse.
+        let s = unsafe { str::from_utf8_unchecked(buf) };
+        // TODO: get_mut_or_init
+        if TZ_BUF.set([0; TIME_ZONE_LEN * TZ_AMT]).is_err() && TZ_ALL.set() {
+            return Ok(());
+        }
+        for line in s.lines() {}
     }
 }

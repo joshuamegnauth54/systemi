@@ -19,8 +19,8 @@ use rustix::{
     fs::{self, Mode, OFlags, SeekFrom},
     io::{self, Errno},
 };
-use zruntime::mpmc::{bounded, Sender, Receiver};
 use tracing::warn;
+use zruntime::mpmc::{Receiver, Sender, bounded};
 
 pub async fn tz_stream(emitter: &StreamEmitter<TimeZone>) -> anyhow::Result<()> {
     let (sender, mut receiver) = channel(TimeZone::unknown());

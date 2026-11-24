@@ -5,6 +5,8 @@ Testing daemon itself can bind to session bus with randomized name.
 
 Handle sigchld plz.
 
+Maybe statically allocate all memory + some back pressure since these services are relatively bounded?
+
 ## timedate1
 
 SetTimezone: Service stores a dirfd to zoneinfo. Timezone string is bounded to 48-ish. Directory is walked with resolve beneath to verify timezone. Maybe read the file to determine it's actually a timezone thing.

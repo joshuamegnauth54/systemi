@@ -60,7 +60,10 @@ pub enum Action {
     Dup,
     Fcntl,
     Fork,
+    Mmap,
+    Munmap,
     Open,
+    Pipe,
     Procctl,
     Read,
     Sanity,
@@ -68,6 +71,7 @@ pub enum Action {
     SetGroups,
     SetUid,
     Socket,
+    Write,
 }
 
 impl Display for Action {
@@ -83,7 +87,10 @@ impl Display for Action {
             Action::Dup => write!(f, "dup"),
             Action::Fcntl => write!(f, "fcntl"),
             Action::Fork => write!(f, "fork"),
+            Action::Mmap => write!(f, "mmap"),
+            Action::Munmap => write!(f, "munmap"),
             Action::Open => write!(f, "open[at]"),
+            Action::Pipe => write!(f, "pipe"),
             #[cfg(not(target_os = "linux"))]
             Action::Procctl => write!(f, "procctl"),
             #[cfg(target_os = "linux")]
@@ -94,6 +101,7 @@ impl Display for Action {
             Action::SetGroups => write!(f, "setgroups"),
             Action::SetUid => write!(f, "setuid"),
             Action::Socket => write!(f, "socket"),
+            Action::Write => write!(f, "write"),
         }
     }
 }
